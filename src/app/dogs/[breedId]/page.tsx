@@ -1,43 +1,28 @@
-import Head from 'next/head';
+import { getAllBreeds, getBreedImages } from '@/utils/api';
 
-// Dummy dog breed data
-const dummyBreeds = {
-    bulldog: {
-        name: 'Bulldog',
-        description: 'Bulldogs are gentle and affectionate companions.',
-    },
-    beagle: {
-        name: 'Beagle',
-        description: 'Beagles are curious and friendly dogs.',
-    },
-    poodle: {
-        name: 'Poodle',
-        description: 'Poodles are intelligent and highly trainable.',
-    },
-};
+export async function generateStaticParams() { /// This is the newer method with Next.js 13+, which is why I didn't use getStaticPaths. Same rationale for not using getStaticProps (used app router instead).
+  const breeds = await getAllBreeds({ cache: 'force-cache' });
+  return breeds.map((breed) => ({
+    breedId: breed,
+  }));
+}
 
-export default function DogBreed({ params }: { params: { breedId: string } }) {
-    const { breedId } = params;
-    const breed = dummyBreeds[breedId];
+export default async function BreedPage({ params }: { params: { breedId: string } }) {
+  const breedImages = await getBreedImages(params.breedId, 20); 
 
-    if (!breed) {
-        return <div>Breed not found</div>; // Handle case where breedId is invalid
-    }
-
-    return (
-        <div className="container">
-            <Head>
-                <title>{breed.name} Adoption</title>
-            </Head>
-            <header className="header">
-                <h1 className="title">{breed.name}</h1>
-            </header>
-            <main className="main">
-                <div className="introduction">
-                    <h2>About This Breed</h2>
-                    <p>{breed.description}</p>
-                </div>
-            </main>
-        </div>
-    );
+  return (
+    <div className="container p-4">
+      <h1 className="text-3xl font-bold capitalize mb-4">{params.breedId}</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {breedImages.map((image: string, index: number) => (
+          <img
+            key={index}
+            src={image}
+            alt={`${params.breedId} dog ${index + 1}`}
+            className="w-full h-48 object-cover rounded"
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
